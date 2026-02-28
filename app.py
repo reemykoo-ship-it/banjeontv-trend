@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="banjeontv 트렌드 대시보드")
 st.title("🔥 실시간 통합 트렌드 & 랭킹 대시보드")
 st.markdown("구글, 네이버, 다음, 네이트의 현재 가장 뜨거운 이슈를 한눈에 확인하세요.")
 
-headers = {'User-Agent': 'Mozilla/5.0'}
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
 
 def get_google_trends():
     url = "https://trends.google.co.kr/trending/rss?geo=KR"
@@ -18,7 +18,7 @@ def get_google_trends():
         trends = [{"순위": i+1, "키워드 (구글)": item.find('title').text} for i, item in enumerate(root.findall('./channel/item')[:10])]
         return pd.DataFrame(trends)
     except:
-        return pd.DataFrame({"오류": ["데이터를 불러오지 못했습니다."]})
+        return pd.DataFrame({"오류": ["구글 데이터를 불러오지 못했습니다."]})
 
 def get_naver_news():
     url = "https://news.naver.com/main/ranking/popularDay.naver"
@@ -28,28 +28,30 @@ def get_naver_news():
         items = soup.select('.rankingnews_list > li > .list_content > a')[:10]
         return pd.DataFrame([{"순위": i+1, "인기 뉴스 (네이버)": item.text.strip()} for i, item in enumerate(items)])
     except:
-        return pd.DataFrame({"오류": ["데이터를 불러오지 못했습니다."]})
+        return pd.DataFrame({"오류": ["네이버 데이터를 불러오지 못했습니다."]})
 
 def get_daum_news():
     url = "https://news.daum.net/ranking/popular"
     try:
         response = requests.get(url, headers=headers)
         soup = BeautifulSoup(response.text, 'html.parser')
-        items = soup.select('.list_news2 > li > .cont_thumb > .tit_thumb > a')[:10]
+        # 다음 뉴스 구조 변경에 맞게 더 넓은 범위의 경로로 수정
+        items = soup.select('.list_news2 a.link_txt')[:10]
         return pd.DataFrame([{"순위": i+1, "인기 뉴스 (다음)": item.text.strip()} for i, item in enumerate(items)])
     except:
-        return pd.DataFrame({"오류": ["데이터를 불러오지 못했습니다."]})
+        return pd.DataFrame({"오류": ["다음 데이터를 불러오지 못했습니다."]})
 
 def get_nate_news():
     url = "https://news.nate.com/rank/interest?sc=sisa"
     try:
         response = requests.get(url, headers=headers)
-        response.encoding = 'utf-8'
+        # 네이트 전용 구형 한글 인코딩(EUC-KR) 방식으로 수정
+        response.encoding = 'euc-kr'
         soup = BeautifulSoup(response.text, 'html.parser')
         items = soup.select('.mduSubjectList .tit')[:10]
         return pd.DataFrame([{"순위": i+1, "인기 뉴스 (네이트)": item.text.strip()} for i, item in enumerate(items)])
     except:
-        return pd.DataFrame({"오류": ["데이터를 불러오지 못했습니다."]})
+        return pd.DataFrame({"오류": ["네이트 데이터를 불러오지 못했습니다."]})
 
 st.markdown("---")
 col1, col2 = st.columns(2)
